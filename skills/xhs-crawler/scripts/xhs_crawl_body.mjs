@@ -6,6 +6,7 @@ const { pathToFileURL } = await import('node:url')
 const {
   auditStoredNotes,
   contentFingerprint,
+  hasUsableCardLayout,
   validateCapture,
 } = await import(pathToFileURL(UTIL).href)
 
@@ -128,14 +129,47 @@ async function ensureClosed() {
 }
 
 async function waitForSearchCards() {
+  let compositorKicked = false
   for (let attempt = 0; attempt < 30; attempt++) {
     const state = await pageState()
-    const height = await js(`(() => {
-      const feeds = document.querySelector('.feeds-container')
-      return feeds ? feeds.getBoundingClientRect().height : 0
+    const layout = await js(`(() => {
+      return [...document.querySelectorAll('.note-item[data-note-id]')]
+        .slice(0, 20)
+        .map((element) => {
+          const rect = element.getBoundingClientRect()
+          const x = Math.round(rect.left)
+          const y = Math.round(rect.top)
+          const centerX = Math.round(rect.left + rect.width / 2)
+          const centerY = Math.round(rect.top + rect.height / 2)
+          const hit = document.elementFromPoint(centerX, centerY)
+          return {
+            id: element.getAttribute('data-note-id') || '',
+            x,
+            y,
+            width: Math.round(rect.width),
+            height: Math.round(rect.height),
+            hit: Boolean(hit && hit.closest('.note-item') === element),
+          }
+        })
     })()`)
-    if (state.pathname.includes('/search_result') && state.cards > 0 && Number(height) > 0) {
+    if (state.pathname.includes('/search_result') && hasUsableCardLayout(layout)) {
       return true
+    }
+    if (
+      !compositorKicked &&
+      attempt >= 4 &&
+      state.pathname.includes('/search_result') &&
+      state.cards > 0
+    ) {
+      // XHS AI search can create all cards at one coordinate until Chromium performs
+      // a compositor readback. Capture a tiny in-memory JPEG to force that layout pass.
+      await cdp('Page.captureScreenshot', {
+        format: 'jpeg',
+        quality: 1,
+        fromSurface: true,
+        captureBeyondViewport: false,
+      })
+      compositorKicked = true
     }
     await wait(0.5)
   }

@@ -12,6 +12,24 @@ export function canonicalNoteId(url) {
   return match ? match[1].toLowerCase() : ''
 }
 
+export function hasUsableCardLayout(cards) {
+  const usable = (cards || []).filter((card) => {
+    return (
+      NOTE_ID_RE.test(String(card.id || '')) &&
+      Number(card.width) >= 50 &&
+      Number(card.height) >= 50 &&
+      Number.isFinite(Number(card.x)) &&
+      Number.isFinite(Number(card.y)) &&
+      card.hit === true
+    )
+  })
+  if (usable.length < 2) return false
+  const positions = new Set(
+    usable.map((card) => Math.round(Number(card.x)) + ':' + Math.round(Number(card.y))),
+  )
+  return positions.size >= 2
+}
+
 export function noteFingerprint(note) {
   const value = note || {}
   return JSON.stringify([
