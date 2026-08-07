@@ -14,12 +14,23 @@
 KW="$1"; SLUG="$2"; TARGET="${3:-20}"; FT="${4:-xhs}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BODY="${SCRIPT_DIR}/xhs_crawl_body.mjs"
+UTIL="${SCRIPT_DIR}/xhs_crawl_utils.mjs"
 BASE="${XHS_DATA_DIR:-$PWD/xhs_data}"
 DATE="${XHS_DATE:-$(date +%Y%m%d)}"
 PL="/tmp/_xhs_pl_$$.js"
-node -e 'process.stdout.write(`const KW=${JSON.stringify(process.argv[1])}, SLUG=${JSON.stringify(process.argv[2])}, TARGET=${process.argv[3]|0}, BASE=${JSON.stringify(process.argv[4])}, DATE=${JSON.stringify(process.argv[5])}, FOLDERTAG=${JSON.stringify(process.argv[6])};\n`)' \
-  "$KW" "$SLUG" "$TARGET" "$BASE" "$DATE" "$FT" > "$PL"
+case "$TARGET" in
+  ''|*[!0-9]*|0)
+    echo 'Usage: xhs_run.sh "<keyword>" "<slug>" [positive-target] [folderTag]' >&2
+    exit 2
+    ;;
+esac
+if [ -z "$KW" ] || [ -z "$SLUG" ]; then
+  echo 'Usage: xhs_run.sh "<keyword>" "<slug>" [positive-target] [folderTag]' >&2
+  exit 2
+fi
+trap 'rm -f "$PL"' EXIT HUP INT TERM
+node -e 'process.stdout.write(`const KW=${JSON.stringify(process.argv[1])}, SLUG=${JSON.stringify(process.argv[2])}, TARGET=${process.argv[3]|0}, BASE=${JSON.stringify(process.argv[4])}, DATE=${JSON.stringify(process.argv[5])}, FOLDERTAG=${JSON.stringify(process.argv[6])}, UTIL=${JSON.stringify(process.argv[7])};\n`)' \
+  "$KW" "$SLUG" "$TARGET" "$BASE" "$DATE" "$FT" "$UTIL" > "$PL"
 cat "$PL" "$BODY" | ego-browser nodejs
 rc=$?
-rm -f "$PL"
 exit $rc
