@@ -41,8 +41,8 @@ const need = Math.max(0, TARGET - existing)
 let done = 0, cf = 0
 for (const id of uniq) {
   if (done >= need) break
-  if (cf >= 4) { log('4 fails, abort'); break }
-  if (st.done.includes(id) || fs.existsSync(path.join(DIR, id + '.json'))) continue
+  if (cf >= 10) { log('10 consecutive fails, abort'); break }
+  if (st.done.includes(id) || fs.existsSync(path.join(DIR, id + '.json')) || st.failed.some(f => f.id === id)) continue
   if (!(await ensureClosed())) { await wait(2); continue }
   let c = await cardCenter(id)
   if (!c || c.missing || !c.isCard || c.top > 680) { await js(`(()=>{const e=document.querySelector('.note-item[data-note-id="${id}"]'); if(e) e.scrollIntoView({block:'center'});})()`); await wait(0.9); c = await cardCenter(id) }
