@@ -4,6 +4,7 @@ import test from 'node:test'
 import {
   auditStoredNotes,
   canonicalNoteId,
+  hasUsableCardLayout,
   validateCapture,
 } from '../scripts/xhs_crawl_utils.mjs'
 
@@ -18,6 +19,26 @@ test('canonicalNoteId extracts a note id only from an explore URL', () => {
   )
   assert.equal(canonicalNoteId(SEARCH_URL), '')
   assert.equal(canonicalNoteId('not a url'), '')
+})
+
+test('hasUsableCardLayout accepts clickable cards even when their container height is zero', () => {
+  assert.equal(
+    hasUsableCardLayout([
+      { id: NOTE_A, x: 196, y: 217, width: 223, height: 381, hit: true },
+      { id: NOTE_B, x: 451, y: 217, width: 223, height: 367, hit: true },
+    ]),
+    true,
+  )
+})
+
+test('hasUsableCardLayout rejects collapsed cards stacked at one coordinate', () => {
+  assert.equal(
+    hasUsableCardLayout([
+      { id: NOTE_A, x: 24, y: 144, width: 223, height: 300, hit: false },
+      { id: NOTE_B, x: 24, y: 144, width: 223, height: 300, hit: false },
+    ]),
+    false,
+  )
 })
 
 test('validateCapture rejects a stale detail that never changed after clicking', () => {
