@@ -22,6 +22,15 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: package/ego-browser/package-lock.json
+      - name: Test XHS crawler data-integrity gates
+        working-directory: skills/xhs-crawler
+        run: |
+          node --test tests/xhs_crawl_utils.test.mjs
+          python3 -m unittest tests/test_xhs_export_utils.py
+          node --check scripts/xhs_crawl_body.mjs
+          node --check scripts/xhs_crawl_utils.mjs
+          python3 -m py_compile scripts/xhs_combined_export.py scripts/xhs_export_utils.py
+          sh -n scripts/xhs_run.sh
       - run: npm ci
       - run: npm test
       - run: npm run validate:site-skills

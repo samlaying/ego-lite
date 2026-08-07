@@ -2,12 +2,10 @@ import os
 import sys
 import unittest
 
-
 SCRIPTS = os.path.join(os.path.dirname(__file__), "..", "scripts")
 sys.path.insert(0, os.path.abspath(SCRIPTS))
 
 from xhs_export_utils import canonical_note_id, deduplicate_posts
-
 
 NOTE_A = "6a3ca3f70000000011006f49"
 NOTE_B = "697e212200000000280212d3"

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Export validated, globally deduplicated Xiaohongshu JSON files to Excel."""
 
 import datetime
@@ -12,9 +11,7 @@ import sys
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
-
 from xhs_export_utils import deduplicate_posts
-
 
 ILLEGAL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
 HEADERS = [
@@ -53,9 +50,9 @@ def load_records(base, date, folder_tag, slugs):
                 with open(path, encoding="utf-8") as handle:
                     note = json.load(handle)
                 if not isinstance(note, dict):
-                    raise ValueError("root JSON value is not an object")
+                    raise TypeError("root JSON value is not an object")
                 records.append({"slug": slug, "path": path, "note": note})
-            except (OSError, ValueError, json.JSONDecodeError) as error:
+            except (OSError, TypeError, ValueError, json.JSONDecodeError) as error:
                 issues.append(
                     {
                         "slug": slug,
@@ -73,7 +70,17 @@ def initialize_workbook():
     workbook = Workbook()
     summary = workbook.active
     summary.title = "汇总"
-    summary.append(["话题", "有效篇数", "评论数", "图片数", "均互动(数1/数2/数3)", "跳过重复", "跳过无效"])
+    summary.append(
+        [
+            "话题",
+            "有效篇数",
+            "评论数",
+            "图片数",
+            "均互动(数1/数2/数3)",
+            "跳过重复",
+            "跳过无效",
+        ]
+    )
     for cell in summary[1]:
         cell.font = Font(bold=True)
 
@@ -81,7 +88,9 @@ def initialize_workbook():
     posts.append(HEADERS)
     for cell in posts[1]:
         cell.font = Font(bold=True)
-        cell.fill = PatternFill(start_color="D6EAF8", end_color="D6EAF8", fill_type="solid")
+        cell.fill = PatternFill(
+            start_color="D6EAF8", end_color="D6EAF8", fill_type="solid"
+        )
     widths = [10, 5, 26, 32, 14, 12, 60, 22, 16, 7, 50, 7, 48]
     for index, width in enumerate(widths, 1):
         posts.column_dimensions[get_column_letter(index)].width = width
@@ -91,7 +100,9 @@ def initialize_workbook():
     quality.append(["话题", "文件", "保存ID", "真实ID", "原因", "详情"])
     for cell in quality[1]:
         cell.font = Font(bold=True)
-        cell.fill = PatternFill(start_color="FADBD8", end_color="FADBD8", fill_type="solid")
+        cell.fill = PatternFill(
+            start_color="FADBD8", end_color="FADBD8", fill_type="solid"
+        )
     quality.column_dimensions["A"].width = 14
     quality.column_dimensions["B"].width = 60
     quality.column_dimensions["C"].width = 26
@@ -188,7 +199,9 @@ def export(base, date, folder_tag, slugs, output_tag=None):
     for slug in slugs:
         stat = stats[slug]
         count = stat["engagement_rows"]
-        average = [value // count for value in stat["engagement"]] if count else [0, 0, 0]
+        average = (
+            [value // count for value in stat["engagement"]] if count else [0, 0, 0]
+        )
         summary.append(
             [
                 slug,
@@ -234,7 +247,9 @@ def main(argv=None):
         return 2
 
     base = os.environ.get("XHS_DATA_DIR", os.path.join(os.getcwd(), "xhs_data"))
-    date = os.environ.get("XHS_DATE", datetime.date.today().strftime("%Y%m%d"))
+    date = os.environ.get(
+        "XHS_DATE", datetime.datetime.now().astimezone().strftime("%Y%m%d")
+    )
     folder_tag = os.environ.get("XHS_FOLDERTAG", "xhs")
     output, totals = export(
         base,

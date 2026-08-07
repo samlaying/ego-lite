@@ -1,7 +1,6 @@
 import json
 import re
 
-
 NOTE_ID_RE = re.compile(r"^[0-9a-f]{24}$", re.IGNORECASE)
 EXPLORE_PATH_RE = re.compile(r"/explore/([0-9a-f]{24})(?:[/?#]|$)", re.IGNORECASE)
 
@@ -19,10 +18,14 @@ def content_fingerprint(note):
     title = _normalize(note.get("title"))
     author = _normalize(note.get("author"))
     desc = _normalize(note.get("desc"))
-    images = sorted({_normalize(url) for url in note.get("images") or [] if _normalize(url)})
+    images = sorted(
+        {_normalize(url) for url in note.get("images") or [] if _normalize(url)}
+    )
     if not title or not (author or desc or images):
         return ""
-    return json.dumps([title, author, desc, images], ensure_ascii=False, separators=(",", ":"))
+    return json.dumps(
+        [title, author, desc, images], ensure_ascii=False, separators=(",", ":")
+    )
 
 
 def validate_post(note):
@@ -54,11 +57,15 @@ def deduplicate_posts(records):
             issues.append({**record, "reason": reason, "actual_id": actual_id})
             continue
         if actual_id in seen_ids:
-            issues.append({**record, "reason": "duplicate-note-id", "actual_id": actual_id})
+            issues.append(
+                {**record, "reason": "duplicate-note-id", "actual_id": actual_id}
+            )
             continue
         fingerprint = content_fingerprint(note)
         if fingerprint and fingerprint in seen_content:
-            issues.append({**record, "reason": "duplicate-content", "actual_id": actual_id})
+            issues.append(
+                {**record, "reason": "duplicate-content", "actual_id": actual_id}
+            )
             continue
         seen_ids.add(actual_id)
         if fingerprint:
