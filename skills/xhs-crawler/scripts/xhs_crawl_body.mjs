@@ -14,7 +14,9 @@ const DIR = path.join(BASE, DATE + "_" + FOLDERTAG + "_" + SLUG);
 const LOGF = path.join(DIR, "crawl.log");
 const SP = path.join(DIR, "state.json");
 const SEARCH_URL =
-  "https://www.xiaohongshu.com/search_result?keyword=" +
+  "https://www.xiaohongshu.com/" +
+  SEARCH_PATH +
+  "?keyword=" +
   encodeURIComponent(KW) +
   "&source=web_explore_feed";
 const SPACE_NAME = "xhs-" + SLUG;
@@ -551,3 +553,31 @@ log(
     ") failed=" +
     st.failed.length,
 );
+
+// Keyword done: drop this search tab and close the task space so the next
+// keyword starts on a new page instead of stacking XHS search tabs.
+try {
+  const tabs = await listTabs();
+  for (const tab of tabs || []) {
+    const url = String(tab.url || "");
+    if (!url.includes("xiaohongshu.com")) continue;
+    try {
+      await closeTab(tab.targetId || tab);
+      log("closed tab " + url.slice(0, 80));
+    } catch {}
+  }
+} catch {
+  try {
+    await closeTab();
+    log("closed current tab");
+  } catch {}
+}
+try {
+  await completeTaskSpace(SPACE_NAME, { keep: false });
+  log("closed task space " + SPACE_NAME);
+} catch (err) {
+  log(
+    "close task space skipped: " +
+      (err && err.message ? err.message : String(err)),
+  );
+}

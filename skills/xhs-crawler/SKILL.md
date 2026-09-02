@@ -23,6 +23,7 @@ sh skills/xhs-crawler/scripts/xhs_run.sh "产品经理 需求分析" "需求分�
 ```
 
 - 参数:`<关键词> <slug> [篇数=20] [folderTag=xhs]`
+- AI 搜索页:`XHS_SEARCH_PATH=search_result_ai sh skills/xhs-crawler/scripts/xhs_run.sh "掉体脂的习惯" "掉体脂的习惯" 15`
 - 产物:`./xhs_data/<日期>_<folderTag>_<slug>/` 下每篇一个 `<note_id>.json` + `state.json`(断点续爬)+ `crawl.log`
 - 每篇 JSON 同时保存 `id` 和经过验证的 `actualId`;若 URL 中出现另一个真实 ID，文件会被拒绝而不是标记完成
 
